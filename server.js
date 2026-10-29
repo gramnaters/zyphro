@@ -33,7 +33,8 @@ function serveStatic(res, entry) {
 
 async function nodeToRequest(req) {
   const host     = req.headers["host"] ?? `localhost:${PORT}`;
-  const proto    = req.headers["x-forwarded-proto"] || "http";
+  const isProxy  = !!(req.headers["x-forwarded-proto"] || req.headers["x-forwarded-for"] || req.headers["x-forwarded-host"]);
+  const proto    = req.headers["x-forwarded-proto"] || req.headers["x-forwarded-scheme"] || (isProxy ? "https" : "http");
   const stripped = BASE && req.url.startsWith(BASE) ? req.url.slice(BASE.length) || "/" : req.url;
   const url      = `${proto}://${host}${stripped}`;
 
