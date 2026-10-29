@@ -112,4 +112,46 @@ function forgetMedia(anilistId) {
   resolved.delete(Number(anilistId));
 }
 
-export { getMedia, forgetMedia };
+// Generic AniList GraphQL passthrough (search/trending/info/schedule). Public API
+// first, then the website's own /graphql (with al_token + cookies) as a fallback,
+// since datacenter IPs are often throttled on the public endpoint.
+async function anilistGraphql(query, variables) {
+  const body = JSON.stringify({ query, variables });
+  const res = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": UA },
+    body,
+  }).catch(() => null);
+  if (res?.ok) {
+    const json = await res.json();
+    if (!json.errors?.length) return json.data;
+  }
+
+  const home = await fetch(`${ANILIST_WEB}/`, {
+    headers: { "User-Agent": UA, Accept: "text/html" },
+  }).catch(() => null);
+  if (!home?.ok) throw new Error("AniList unreachable");
+  const html = await home.text();
+  const token = html.match(/window\.al_token\s*=\s*"([^"]+)"/)?.[1];
+  const cookie = cookiesFromHeaders(home.headers);
+  if (!token || !cookie) throw new Error("AniList session unavailable");
+  const wres = await fetch(`${ANILIST_WEB}/graphql`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "User-Agent": UA,
+      Referer: `${ANILIST_WEB}/home`,
+      "x-csrf-token": token,
+      schema: "default",
+      Cookie: cookie,
+    },
+    body,
+  }).catch(() => null);
+  if (!wres?.ok) throw new Error(`AniList web HTTP ${wres?.status}`);
+  const wjson = await wres.json();
+  if (wjson.errors?.length) throw new Error(wjson.errors[0].message);
+  return wjson.data;
+}
+
+export { getMedia, forgetMedia, anilistGraphql };

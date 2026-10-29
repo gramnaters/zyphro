@@ -1,4 +1,4 @@
-import { getMedia }                from "./core/anilist.js";
+import { getMedia, anilistGraphql }    from "./core/anilist.js";
 import { mapAnimeIds }             from "./core/mapper.js";
 import mkissaHandler               from "./providers/mkissa.js";
 import reanimeHandler              from "./providers/reanime.js";
@@ -78,6 +78,22 @@ export default {
           "Access-Control-Allow-Headers": "*",
         },
       });
+    }
+
+    // Generic AniList GraphQL passthrough for the frontend's metadata queries.
+    if (path === "/anilist" && request.method === "POST") {
+      const body = await request.json().catch(() => null);
+      if (!body?.query) return json({ error: "missing query" }, 400);
+      const cacheKey = "al:" + JSON.stringify({ q: body.query, v: body.variables || {} });
+      const entry = await getAsync(cacheKey);
+      if (entry && isFresh(entry)) return json(entry.data);
+      try {
+        const data = await anilistGraphql(body.query, body.variables || {});
+        await setAsync(cacheKey, data, 300_000);
+        return json(data);
+      } catch (e) {
+        return json({ error: e.message }, 502);
+      }
     }
 
     let m = path.match(/^\/map\/(\d+)\/?$/);
