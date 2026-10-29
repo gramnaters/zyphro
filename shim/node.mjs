@@ -550,7 +550,9 @@ function collectSources(data, p, proxyBase) {
   if (!sources.length) for (const url of embeds) sources.push({ url, quality: sources.length === 0 ? "default" : "backup", isM3U8: false, isEmbed: true, provider: p });
   // Proxy subtitles too — their CDN requires the stream's Referer (403 without it).
   const subRef = raw[0]?.referer || raw[0]?.headers?.Referer || topHeaders.Referer || topHeaders.Referrer || null;
-  const subtitles = (Array.isArray(data?.subtitles) ? data.subtitles : [])
+  const subList = (Array.isArray(data?.subtitles) && data.subtitles.length) ? data.subtitles
+    : (Array.isArray(raw[0]?.subtitles) ? raw[0].subtitles : []);
+  const subtitles = subList
     .map((s) => ({
       url: s?.url ? `${proxyBase}/hls/${proxyToken(s.url, null, s.referer || subRef)}/sub.vtt` : null,
       lang: s?.lang || s?.label || s?.srclang || "Unknown",
