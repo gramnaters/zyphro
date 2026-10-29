@@ -33,8 +33,9 @@ function serveStatic(res, entry) {
 
 async function nodeToRequest(req) {
   const host     = req.headers["host"] ?? `localhost:${PORT}`;
+  const proto    = req.headers["x-forwarded-proto"] || "http";
   const stripped = BASE && req.url.startsWith(BASE) ? req.url.slice(BASE.length) || "/" : req.url;
-  const url      = `http://${host}${stripped}`;
+  const url      = `${proto}://${host}${stripped}`;
 
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
