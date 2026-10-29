@@ -55,6 +55,35 @@ function hashString(str) {
   return (h >>> 0).toString(36);
 }
 
+// ---- shared cache (Upstash Redis) ----
+// L2 cache shared across both Anivexa nodes, so a scrape done on one node is
+// reused by the other. L1 (the in-memory Map) stays the fast path.
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+
+async function sharedGet(key) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return undefined;
+  try {
+    const r = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+    if (!r.ok) return undefined;
+    const j = await r.json();
+    if (j.result == null) return undefined;
+    return JSON.parse(j.result);
+  } catch {
+    return undefined;
+  }
+}
+function sharedSet(key, value, ttlSeconds) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  fetch(`${UPSTASH_URL}/set/${encodeURIComponent(key)}?ex=${ttlSeconds}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ value: JSON.stringify(value) }),
+  }).catch(() => {});
+}
+
 function cached(key, ttl, fn) {
   const hit = CACHE.get(key);
   const now = Date.now();
@@ -62,6 +91,8 @@ function cached(key, ttl, fn) {
   const value = fn().catch((err) => { CACHE.delete(key); throw err; });
   CACHE.set(key, { value, expires: now + ttl });
   if (CACHE.size > 1500) for (const [k, v] of CACHE) if (v.expires <= now) CACHE.delete(k);
+  // warm the shared cache (fire-and-forget) so the other node can reuse it
+  value.then((v) => sharedSet(key, v, Math.round(ttl / 1000))).catch(() => {});
   return value;
 }
 function withTimeout(promise, ms, fallback) {
@@ -696,9 +727,15 @@ export async function handleShim(request, env) {
         const key = `eps:${anilistId}:${preferred || "*"}:${audio}`;
         const hit = CACHE.get(key);
         if (hit && hit.expires > Date.now()) return json(await hit.value);
+        const sharedEps = await sharedGet(key);
+        if (sharedEps) {
+          CACHE.set(key, { value: Promise.resolve(sharedEps), expires: Date.now() + TTL.episodes });
+          return json(sharedEps);
+        }
         const { provider, list, audio: actualAudio } = await getEpisodes(ANIVEXA, anilistId, audio, preferred);
         const episodes = list.map((ep) => mapEpisode(anilistId, provider, actualAudio || audio, ep));
         CACHE.set(key, { value: Promise.resolve(episodes), expires: Date.now() + TTL.episodes });
+        sharedSet(key, episodes, Math.round(TTL.episodes / 1000));
         return json(episodes);
       }
 
@@ -721,13 +758,20 @@ export async function handleShim(request, env) {
             CACHE.delete(key);
           }
         }
+        const sharedWatch = await sharedGet(key);
+        if (sharedWatch) {
+          CACHE.set(key, { value: Promise.resolve(sharedWatch), expires: Date.now() + TTL.watch });
+          return json(sharedWatch);
+        }
         const value = handleWatch(ANIVEXA, episodeId, proxyBase).catch((err) => {
           CACHE.delete(key); // never cache a failure
           throw err;
         });
         CACHE.set(key, { value, expires: Date.now() + TTL.watch });
         try {
-          return json(await value);
+          const built = await value;
+          sharedSet(key, built, Math.round(TTL.watch / 1000));
+          return json(built);
         } catch (err) {
           return json({ error: "No working stream: " + (err?.message || "unknown") }, err?.status || 404);
         }
