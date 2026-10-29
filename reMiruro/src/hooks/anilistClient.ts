@@ -234,11 +234,31 @@ export async function searchAnime(opts: SearchOptions = {}) {
   };
 }
 
+// TVDB clear logo (ani.zip) — enables the wipe-in logo reveal while the player loads.
+const logoCache = new Map<string, string | null>();
+export async function fetchLogo(id: string | number) {
+  const key = String(id);
+  if (logoCache.has(key)) return logoCache.get(key);
+  let logo: string | null = null;
+  try {
+    const res = await fetch(`https://api.ani.zip/mappings?anilist_id=${key}`);
+    if (res.ok) {
+      const json = await res.json();
+      logo = (json?.images || []).find((i: any) => i?.coverType?.toLowerCase() === "clearlogo")?.url || null;
+    }
+  } catch {}
+  logoCache.set(key, logo);
+  return logo;
+}
+
 export async function getAnimeData(id: string | number) {
   const query = `query ($id: Int) { Media(id: $id, type: ANIME) { ${MEDIA_FRAGMENT} ${EXTRAS_FRAGMENT} } }`;
   const data = await graphql(query, { id: Number(id) });
   if (!data.Media) throw new Error("Anime not found");
-  return mapMedia(data.Media, { extras: true });
+  const anime = mapMedia(data.Media, { extras: true });
+  // Attach the TVDB clear logo for the player's loading reveal.
+  anime.logo = await fetchLogo(id);
+  return anime;
 }
 
 export { readTags };

@@ -522,10 +522,8 @@ async function fetchSubtitle(url, referer) {
   if (referer) headers["Referer"] = referer;
   const resp = await fetch(url, { headers, redirect: "follow" });
   const hdrs = { ...CORS, "Content-Type": "text/vtt" };
-  for (const h of ["Content-Length", "Content-Type"]) {
-    const v = resp.headers.get(h);
-    if (v) hdrs[h] = v;
-  }
+  const len = resp.headers.get("Content-Length");
+  if (len) hdrs["Content-Length"] = len;
   return new Response(resp.body, { status: resp.status, headers: hdrs });
 }
 
