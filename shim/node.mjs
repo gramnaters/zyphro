@@ -223,8 +223,25 @@ const EXTRAS_FRAGMENT = `
   recommendations { edges { node { mediaRecommendation { id idMal status format episodes averageScore title { romaji english native userPreferred } coverImage { extraLarge large color } bannerImage } } } }
 `;
 
+// Oxylabs residential proxy for AniList — bypasses AniList's datacenter-IP block so
+// server-side metadata queries aren't rate-limited. Set ANILIST_PROXY to a
+// "http://user:pass@host:port" residential proxy.
+const ANILIST_PROXY = process.env.ANILIST_PROXY || "";
+let _proxyAgent = null;
+let _undici = null;
+async function proxiedFetch(url, opts) {
+  if (!ANILIST_PROXY) return fetch(url, opts);
+  try {
+    if (!_undici) _undici = await import("undici");
+    if (!_proxyAgent) _proxyAgent = new _undici.ProxyAgent(ANILIST_PROXY);
+    return _undici.fetch(url, { ...opts, dispatcher: _proxyAgent });
+  } catch {
+    return fetch(url, opts);
+  }
+}
+
 async function anilist(query, variables) {
-  const res = await fetch(ANILIST, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": UA }, body: JSON.stringify({ query, variables }) });
+  const res = await proxiedFetch(ANILIST, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": UA }, body: JSON.stringify({ query, variables }) });
   if (res.ok) {
     const data = await res.json();
     if (!data.errors?.length) return data.data;

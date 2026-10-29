@@ -1,6 +1,12 @@
 // Client-side AniList GraphQL — the shim can't reach AniList (Cloudflare Workers are
 // blocked by AniList), so the browser does these queries directly (AniList is CORS-open).
 const ANILIST = "https://graphql.anilist.co";
+// Metadata goes through the shim's /anilist endpoint, which uses a residential proxy
+// (Oxylabs) so AniList never rate-limits the browser's server.
+const BACKEND = (import.meta.env.VITE_BACKEND_URL as string)
+  .split(",")[0]
+  .trim()
+  .replace(/\/?$/, "/");
 
 const STATUS_MAP: Record<string, string> = {
   FINISHED: "Completed",
@@ -116,21 +122,20 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const inFlight = new Map<string, Promise<any>>();
 let queue: Promise<any> = Promise.resolve();
 
-async function anilistFetch(query: string, variables: any, retries = 3) {
-  const res = await fetch(ANILIST, {
+async function anilistFetch(query: string, variables: any, retries = 2) {
+  const res = await fetch(`${BACKEND}anilist`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
   });
-  if (res.status === 429 && retries > 0) {
-    // AniList's window is per-minute, so back off generously before retrying.
-    await sleep(2000 * (4 - retries)); // 2s, 4s, 6s
+  if (res.status === 502 && retries > 0) {
+    await sleep(800);
     return anilistFetch(query, variables, retries - 1);
   }
   if (!res.ok) throw new Error(`AniList HTTP ${res.status}`);
   const json = await res.json();
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  return json.data;
+  if (json?.error) throw new Error(json.error);
+  return json; // the shim returns the GraphQL `data` object directly
 }
 
 // Shared entrypoint: dedupes identical in-flight queries and serializes so requests
