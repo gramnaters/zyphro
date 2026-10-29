@@ -516,6 +516,19 @@ async function fetchMp4(url, referer, range) {
   return new Response(resp.body, { status: resp.status, headers: hdrs });
 }
 
+// Stream a subtitle (.vtt/.srt) through the proxy with the referer its CDN requires.
+async function fetchSubtitle(url, referer) {
+  const headers = { "User-Agent": UA, Accept: "*/*" };
+  if (referer) headers["Referer"] = referer;
+  const resp = await fetch(url, { headers, redirect: "follow" });
+  const hdrs = { ...CORS, "Content-Type": "text/vtt" };
+  for (const h of ["Content-Length", "Content-Type"]) {
+    const v = resp.headers.get(h);
+    if (v) hdrs[h] = v;
+  }
+  return new Response(resp.body, { status: resp.status, headers: hdrs });
+}
+
 function collectSources(data, p, proxyBase) {
   let raw = Array.isArray(data?.streams) ? data.streams : [];
   if (!raw.length && Array.isArray(data?.sources)) raw = data.sources.map((s) => ({ url: s.extractedUrl || s.url, type: s.extractedType || s.type, server: s.name || s.server, referer: s.referer || s.headers?.Referer, headers: s.headers, key: s.key || s.playlist_key, playlist_key: s.playlist_key }));
@@ -537,7 +550,15 @@ function collectSources(data, p, proxyBase) {
     sources.push({ url: proxied, quality: sources.length === 0 ? "default" : "backup", isM3U8: isHls && !isMp4, isDASH: isDash, isMP4: isMp4 && !isHls, provider: p });
   }
   if (!sources.length) for (const url of embeds) sources.push({ url, quality: sources.length === 0 ? "default" : "backup", isM3U8: false, isEmbed: true, provider: p });
-  return { sources, download: data?.download || data?.stream_url || "", subtitles: data?.subtitles || [] };
+  // Proxy subtitles too — their CDN requires the stream's Referer (403 without it).
+  const subRef = raw[0]?.referer || raw[0]?.headers?.Referer || topHeaders.Referer || topHeaders.Referrer || null;
+  const subtitles = (Array.isArray(data?.subtitles) ? data.subtitles : [])
+    .map((s) => ({
+      url: s?.url ? `${proxyBase}/hls/${proxyToken(s.url, null, s.referer || subRef)}/sub.vtt` : null,
+      lang: s?.lang || s?.label || s?.srclang || "Unknown",
+    }))
+    .filter((s) => s.url);
+  return { sources, download: data?.download || data?.stream_url || "", subtitles };
 }
 
 async function attemptWatch(ANIVEXA, p, anilistId, audio, ep, proxyBase, limit) {
@@ -647,11 +668,14 @@ export async function handleShim(request, env) {
       }
 
       let hlsMatch;
-      if ((hlsMatch = path.match(/^\/hls\/([^/]+)\/(pl\.m3u8|file\.mp4)/))) {
+      if ((hlsMatch = path.match(/^\/hls\/([^/]+)\/(pl\.m3u8|file\.mp4|sub\.vtt)/))) {
         const { url, referer, key } = parseProxyToken(hlsMatch[1]);
         if (!url) return json({ error: "bad token" }, 400);
         if (hlsMatch[2] === "file.mp4") {
           return await fetchMp4(url, referer, request.headers.get("Range"));
+        }
+        if (hlsMatch[2] === "sub.vtt") {
+          return await fetchSubtitle(url, referer);
         }
         return await fetchPlaylist(proxyBase, url, key, referer);
       }
