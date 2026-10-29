@@ -9,6 +9,7 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "playwright-core": "^1.63.0",
+    "undici": "^6.21.0",
     "wreq-js": "^3.2.0"
   }
 }

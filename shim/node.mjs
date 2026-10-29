@@ -234,8 +234,11 @@ async function proxiedFetch(url, opts) {
   try {
     if (!_undici) _undici = await import("undici");
     if (!_proxyAgent) _proxyAgent = new _undici.ProxyAgent(ANILIST_PROXY);
-    return _undici.fetch(url, { ...opts, dispatcher: _proxyAgent });
-  } catch {
+    const res = await _undici.fetch(url, { ...opts, dispatcher: _proxyAgent });
+    console.log("PROXY OK", res.status);
+    return res;
+  } catch (e) {
+    console.log("PROXY FAIL", e.message);
     return fetch(url, opts);
   }
 }
