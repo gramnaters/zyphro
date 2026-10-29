@@ -1,0 +1,36 @@
+:root {
+  --global-primary-bg: var(--surface-page);
+  --global-primary-bg-tr: var(--surface-page-overlay);
+  --global-secondary-bg: var(--surface-secondary);
+  --global-tertiary-bg: var(--surface-tertiary);
+  --global-div: var(--surface-panel);
+  --global-div-tr: var(--surface-panel-overlay);
+  --global-border: var(--border-color);
+  --global-text: var(--text-primary);
+  --global-text-muted: var(--text-muted);
+  --global-card-bg: var(--surface-card);
+  --global-card-title-bg: var(--surface-card-title);
+  --global-card-shadow: var(--shadow-color);
+  --global-primary-skeleton: var(--skeleton-base);
+  --global-secondary-skeleton: var(--skeleton-highlight);
+  --global-button-bg: var(--control-bg);
+  --global-button-hover-bg: var(--control-hover-bg);
+  --global-button-text: var(--control-text);
+  --global-button-shadow: var(--control-shadow);
+  --global-genre-button-bg: var(--surface-panel);
+  --global-shadow: var(--shadow-color-soft);
+  --global-border-radius: var(--radius);
+  --primary-accent: var(--accent);
+  --primary-accent-bg: var(--accent-bg);
+  --logo-text-transparent: var(--wordmark);
+  --logo-transparent: var(--logo);
+  --ongoing-dot-color: var(--status-ongoing);
+  --completed-indicator-color: var(--status-completed);
+  --cancelled-indicator-color: var(--status-cancelled);
+  --not-yet-aired-indicator-color: var(--status-upcoming);
+  --default-indicator-color: #808080;
+}
+
+* {
+  box-sizing: border-box;
+}

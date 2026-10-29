@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#080808" />
+    <meta
+      name="description"
+      content="Watch anime online free in HD. Stream subbed and dubbed anime episodes with no ads, no signup. The best free anime streaming site - new episodes daily."
+    />
+    <title>Miruro · Watch Anime Online Free · Stream Sub &amp; Dub in HD</title>
+    <script>
+      var t = "dark";
+      try {
+        var s = JSON.parse(localStorage.getItem("miruro:settings") || "null");
+        t = (s && s.theme) || JSON.parse(localStorage.getItem("miruro:settings:theme")) || "dark";
+      } catch (e) {}
+      var h = document.documentElement;
+      h.dataset.branding = "default";
+      if (!["light", "dark", "anilist", "catppuccin"].includes(t))
+        t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      h.classList.add(t + "-mode");
+      h.style.backgroundColor =
+        {
+          dark: "#0b0b0f",
+          light: "#f5f5f5",
+          anilist: "#0b1622",
+          catppuccin: "#1e1e2e",
+        }[t] || "#0b0b0f";
+    </script>
+    <link rel="dns-prefetch" href="https://s4.anilist.co" />
+    <link rel="preconnect" href="https://s4.anilist.co" crossorigin />
+    <link rel="preload" href="/fonts/geist/sans/Geist[wght].woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/assets/animations.css" />
+    <link rel="stylesheet" href="/assets/Overlay-BTLdHD01.css" />
+    <link rel="stylesheet" href="/assets/Image-DxaXEwGX.css" />
+    <link rel="stylesheet" href="/assets/index-w9pLiRXk.css" />
+    <link rel="stylesheet" href="/assets/ButtonPrimitives-CETMJuiE.css" />
+    <link rel="stylesheet" href="/assets/LinkPrimitives-Bsp-ePCZ.css" />
+    <link rel="stylesheet" href="/assets/Segments-sDJHyViA.css" />
+    <link rel="stylesheet" href="/assets/ToggleSwitch-CbEyrjLP.css" />
+    <link rel="stylesheet" href="/assets/SelectBox-j1Qry3w_.css" />
+    <link rel="stylesheet" href="/assets/cardUtils-CAh6cp2Y.css" />
+    <link rel="stylesheet" href="/assets/ListButtons-C0Cdv769.css" />
+    <link rel="stylesheet" href="/assets/CardItem-CRW20JpE.css" />
+    <link rel="stylesheet" href="/assets/CardGrid-62rktyfF.css" />
+    <link rel="stylesheet" href="/assets/CardBanner-B2lgxmnb.css" />
+    <link rel="stylesheet" href="/assets/CardAniChart-BLMt1ZIY.css" />
+    <link rel="stylesheet" href="/assets/Pagination-6ynIKtSF.css" />
+    <link rel="stylesheet" href="/assets/SideList-CMmUHy03.css" />
+    <link rel="stylesheet" href="/assets/Seasons-BJSqZOIm.css" />
+    <link rel="stylesheet" href="/assets/bi-BnJecCot.css" />
+    <link rel="stylesheet" href="/assets/schedule-CEExDIOz.css" />
+    <link rel="stylesheet" href="/assets/ScheduleCardSurface-CYcf9EZ9.css" />
+    <link rel="stylesheet" href="/assets/localHistoryUtils-D31h5gDz.css" />
+    <link rel="stylesheet" href="/assets/filters-pV29zeCu.css" />
+    <link rel="stylesheet" href="/assets/HomeRoute-D-W2DX5R.css" />
+    <link rel="stylesheet" href="/assets/InfoRoute-0b_mMgnT.css" />
+    <link rel="stylesheet" href="/assets/WatchRoute-CxqAdTVD.css" />
+    <link rel="stylesheet" href="/assets/SearchRoute-CbH4N_T-.css" />
+    <link rel="stylesheet" href="/assets/ScheduleRoute-BdyValAA.css" />
+    <link rel="stylesheet" href="/assets/TrendingRoute-ZO_j2F7H.css" />
+    <link rel="stylesheet" href="/assets/HistoryRoute-B2Q4yV62.css" />
+    <link rel="stylesheet" href="/assets/NotFoundRoute-DFWU9Ax9.css" />
+    <link rel="stylesheet" href="/src/styles/themes.css" />
+    <link rel="icon" id="favicon" type="image/svg+xml" href="/icon-light-1024x1024.svg" data-light="/icon-light-1024x1024.svg" data-dark="/icon-dark-1024x1024.svg" />
+    <script>
+      (()=>{var l=favicon,m=matchMedia("(prefers-color-scheme: dark)"),b=document.documentElement.dataset.branding,a=()=>{var t=m.matches?"dark":"light";l.type=b==="halloween"||b==="christmas"?"image/png":"image/svg+xml";l.href=l.type==="image/png"?"/favicon-"+b+"-"+t+".png":l.dataset[t]};m.addEventListener?.("change",a);a()})()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

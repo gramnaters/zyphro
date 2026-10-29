@@ -9,3 +9,7 @@ extractors/voe.js
 
 .cursor/
 .playwright-mcp/
+
+dist/
+.wrangler/
+reMiruro/.wrangler/

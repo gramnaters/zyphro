@@ -1,0 +1,6 @@
+name = "remiruru-api"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+ANIVEXA_URL = "https://2cvf55.bot-keep.xyz"
