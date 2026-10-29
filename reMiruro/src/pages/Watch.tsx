@@ -756,14 +756,23 @@ export default function Watch() {
     return () => window.removeEventListener('keydown', onKey);
   }, [next, prev]);
 
+  // The provider scan scrapes several upstreams and can take seconds. The AUDIO/SERVER
+  // panel must appear instantly (like the metadata) rather than waiting for it, so fall
+  // back to the well-known provider set until the accurate scan lands and replaces it.
+  const DEFAULT_SERVERS = ['reanime', 'anikoto', 'animegg', 'anipm', 'kaa', 'kiwi'];
+  const serverNames = available.length ? available.map((p) => p.name) : DEFAULT_SERVERS;
+
   const audioOptions: SelectOption[] = [
     { value: 'sub', label: 'Sub' },
-    ...(providers.some((p) => p.dub > 0) ? [{ value: 'dub', label: 'Dub' }] : []),
+    // Show Dub optimistically until the scan proves this title has none.
+    ...(providers.length === 0 || providers.some((p) => p.dub > 0)
+      ? [{ value: 'dub', label: 'Dub' }]
+      : []),
   ];
 
-  const serverOptions: SelectOption[] = available.map((p) => ({
-    value: p.name,
-    label: serverLabel(p.name),
+  const serverOptions: SelectOption[] = serverNames.map((name) => ({
+    value: name,
+    label: serverLabel(name),
     tags: [dub ? { text: 'dub' } : { text: 'sub' }],
   }));
 
@@ -812,47 +821,45 @@ export default function Watch() {
               </>
             )}
           </div>
-          {providers.length > 0 && (
-            <div className='_dropdownStack_1bozs_29'>
-              <div className='_dropdownLabels_1bozs_36'>
-                <span className='_dropdownLabel_1bozs_36'>
-                  <span className='_dropdownLabelIcon_1bozs_57'>
-                    <Ic n='headphones' />
-                  </span>
-                  AUDIO
+          <div className='_dropdownStack_1bozs_29'>
+            <div className='_dropdownLabels_1bozs_36'>
+              <span className='_dropdownLabel_1bozs_36'>
+                <span className='_dropdownLabelIcon_1bozs_57'>
+                  <Ic n='headphones' />
                 </span>
-                <span className='_dropdownLabel_1bozs_36'>
-                  <span className='_dropdownLabelIcon_1bozs_57'>
-                    <Ic n='server' />
-                  </span>
-                  SERVER ({serverOptions.length})
+                AUDIO
+              </span>
+              <span className='_dropdownLabel_1bozs_36'>
+                <span className='_dropdownLabelIcon_1bozs_57'>
+                  <Ic n='server' />
                 </span>
-              </div>
-              <div className='_dropdownGroup_1bozs_61'>
-                <LiveSelect
-                  label='Language'
-                  icon={dub ? 'mic' : 'sub'}
-                  value={dub ? 'dub' : 'sub'}
-                  options={audioOptions}
-                  onChange={(v) => {
-                    localStorage.setItem('miruro:watch:audio', v);
-                    setDub(v === 'dub');
-                  }}
-                />
-                <div className='_divider_1bozs_71' />
-                <LiveSelect
-                  label='Server'
-                  icon='bolt'
-                  value={provider}
-                  options={serverOptions}
-                  onChange={(v) => {
-                    localStorage.setItem('miruro:watch:server', v);
-                    setProvider(v);
-                  }}
-                />
-              </div>
+                SERVER ({serverOptions.length})
+              </span>
             </div>
-          )}
+            <div className='_dropdownGroup_1bozs_61'>
+              <LiveSelect
+                label='Language'
+                icon={dub ? 'mic' : 'sub'}
+                value={dub ? 'dub' : 'sub'}
+                options={audioOptions}
+                onChange={(v) => {
+                  localStorage.setItem('miruro:watch:audio', v);
+                  setDub(v === 'dub');
+                }}
+              />
+              <div className='_divider_1bozs_71' />
+              <LiveSelect
+                label='Server'
+                icon='bolt'
+                value={provider}
+                options={serverOptions}
+                onChange={(v) => {
+                  localStorage.setItem('miruro:watch:server', v);
+                  setProvider(v);
+                }}
+              />
+            </div>
+          </div>
         </div>
         <div className='_tagRowGroup_1bozs_18'>
           <div className='_tagRow_1bozs_18'>

@@ -4,6 +4,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "prestart": "npm install --omit=dev --no-audit --no-fund",
     "start": "node server.js"
   },
   "dependencies": {
