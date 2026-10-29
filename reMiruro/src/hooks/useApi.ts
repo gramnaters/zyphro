@@ -478,12 +478,14 @@ export async function fetchAnimeProviders(animeId: string) {
   const cacheKey = generateCacheKey('animeProviders', animeId);
   const hit = animeProvidersCache.get(cacheKey);
   if (hit) return hit;
-  const response = await axiosInstance.get(
-    PROXY_URL ? '' : url,
-    PROXY_URL ? { params: { url } } : {},
-  );
-  const data = response.data;
-  if (data && !data.partial) animeProvidersCache.set(cacheKey, data);
+  // Use the dual-node failover (fetchFromProxy) so the watch page keeps working
+  // even when one backend is down. `partial` results are returned but not cached.
+  const data = await fetchFromProxy(url, {
+    get: () => null,
+    set: (k: string, v: any) => {
+      if (v && !v.partial) animeProvidersCache.set(cacheKey, v);
+    },
+  }, cacheKey);
   return data;
 }
 
