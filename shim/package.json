@@ -1,0 +1,10 @@
+{
+  "name": "anivexa-shim",
+  "version": "1.0.0",
+  "description": "Consumet-compatible adapter + HLS proxy that binds the Anivexa API to Consumet-style frontends (e.g. Miruro).",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}
