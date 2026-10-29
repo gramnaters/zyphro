@@ -920,7 +920,10 @@ export default function Watch() {
                   className='_frame_1fg54_17'
                   episodeId={playId}
                   episodeNumber={playNumber}
-                  banner={current?.image || anime?.cover}
+                  // Keep the poster stable: prefer the AniList banner/cover (ready ~1s)
+                  // over the TVDB episode still, which only arrives when the slow provider
+                  // scan finishes and would otherwise swap mid logo-reveal.
+                  banner={anime?.cover || current?.image}
                   logo={anime?.logo}
                   malId={anime?.malId ? String(anime.malId) : undefined}
                   animeTitle={anime ? titleOf(anime) : slugTitle(slug || titleSlug)}
