@@ -64,7 +64,11 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const request  = await nodeToRequest(req);
-    const response = await worker.fetch(request, { API_VERSION });
+    const response = await worker.fetch(request, {
+      API_VERSION,
+      ANIVEXA_URL: `http://localhost:${PORT}`,
+      PUBLIC_URL: process.env.PUBLIC_URL || "",
+    });
 
     res.statusCode = response.status;
     for (const [k, v] of response.headers) res.setHeader(k, v);

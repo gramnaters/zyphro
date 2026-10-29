@@ -1,4 +1,5 @@
 import { getMedia, anilistGraphql }    from "./core/anilist.js";
+import { handleShim }               from "./shim/node.mjs";
 import { mapAnimeIds }             from "./core/mapper.js";
 import mkissaHandler               from "./providers/mkissa.js";
 import reanimeHandler              from "./providers/reanime.js";
@@ -68,6 +69,10 @@ export default {
   async fetch(request, env) {
     const url  = new URL(request.url);
     const path = url.pathname;
+
+    // The Consumet shim handles /meta/anilist/* and /hls/* (and returns null otherwise).
+    const shimRes = await handleShim(request, env);
+    if (shimRes) return shimRes;
 
     if (request.method === "OPTIONS") {
       return new Response(null, {
