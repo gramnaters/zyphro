@@ -653,7 +653,7 @@ export async function handleShim(request, env) {
         if (hlsMatch[2] === "file.mp4") {
           return await fetchMp4(url, referer, request.headers.get("Range"));
         }
-        return await fetchPlaylist(ctx, proxyBase, url, key, referer);
+        return await fetchPlaylist(proxyBase, url, key, referer);
       }
 
       if (path === "/meta/anilist/advanced-search") return json(await anilistPage(u.searchParams));
