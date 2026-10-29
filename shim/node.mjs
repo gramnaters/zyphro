@@ -80,7 +80,7 @@ function sharedSet(key, value, ttlSeconds) {
   fetch(`${UPSTASH_URL}/set/${encodeURIComponent(key)}?ex=${ttlSeconds}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ value: JSON.stringify(value) }),
+    body: JSON.stringify(value),
   }).catch(() => {});
 }
 
