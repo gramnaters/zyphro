@@ -1,6 +1,11 @@
-// Client-side AniList GraphQL — the shim can't reach AniList (Cloudflare Workers are
-// blocked by AniList), so the browser does these queries directly (AniList is CORS-open).
+// Metadata goes through the shim's /anilist endpoint, which reaches AniList through an
+// Oxylabs residential proxy — so the browser/server IP is never rate-limited. Falls
+// back to direct AniList (CORS-open, but rate-limited) only if the node is unreachable.
 const ANILIST = "https://graphql.anilist.co";
+const BACKEND = ((import.meta.env.VITE_BACKEND_URL as string) || "")
+  .split(",")[0]
+  .trim()
+  .replace(/\/?$/, "/");
 
 const STATUS_MAP: Record<string, string> = {
   FINISHED: "Completed",
@@ -116,16 +121,30 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const inFlight = new Map<string, Promise<any>>();
 let queue: Promise<any> = Promise.resolve();
 
-async function anilistFetch(query: string, variables: any, retries = 3) {
+async function anilistFetch(query: string, variables: any, retries = 2) {
+  // Primary: shim /anilist (Oxylabs residential proxy → no AniList rate limit).
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${BACKEND}anilist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ query, variables }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && !json.error && !json.errors?.length) return json;
+      }
+    } catch {}
+    if (attempt < retries) await sleep(600 * (attempt + 1));
+  }
+  // Fallback: direct AniList (rate-limited, but keeps the UI alive if the node is down).
   const res = await fetch(ANILIST, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
   });
   if (res.status === 429 && retries > 0) {
-    // AniList's window is per-minute, so back off generously before retrying.
-    await sleep(2000 * (4 - retries)); // 2s, 4s, 6s
-    return anilistFetch(query, variables, retries - 1);
+    await sleep(2000);
   }
   if (!res.ok) throw new Error(`AniList HTTP ${res.status}`);
   const json = await res.json();
